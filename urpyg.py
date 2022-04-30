@@ -19,7 +19,7 @@ keys = {
 
 modifiers = {
     'shift' : pyglet.window.key.MOD_SHIFT,
-    'control' : pyglet.window.key.MOD_CTRL 
+    'control' : pyglet.window.key.MOD_CTRL
 }
 
 buttons = {
@@ -51,6 +51,19 @@ held_modifiers = {
 del held_alphabet
 del held_numbers
 
+percent_of = lambda percent_of, number: percent_of * number / 100
+percent = lambda percent, number: percent / number * 100
+
+def convert_pos(old_pos, old_size, new_size):
+    if isinstance(old_pos, tuple) or isinstance(old_pos, list):
+        x, y = old_pos
+        old_screen_width, old_screen_height = old_size
+        screen_width, screen_height = new_size
+
+        x_percent, y_percent  = percent(x, old_screen_width), percent(y, old_screen_height)
+        return percent_of(x_percent, screen_width), percent_of(y_percent, screen_height)
+    return percent_of(percent(old_pos, old_size), new_size)
+
 class Mouse:
     x = 0
     y = 0
@@ -64,8 +77,8 @@ class Mouse:
 mouse = Mouse()
 
 class Window:
-    def __init__(self, title = '', fullscreen = False, resizable = False, interval = 1 / 60, mouse_enabled = True):
-        self._window = pyglet.window.Window(caption = title, fullscreen = fullscreen, resizable = resizable)
+    def __init__(self, title = '', width = 1000, height = 700, fullscreen = False, resizable = False, interval = 1 / 60, mouse_enabled = True):
+        self._window = pyglet.window.Window(width = width, height = height, caption = title, fullscreen = fullscreen, resizable = resizable)
         self._title = title
         self._resizable = resizable
         self._mouse_enabled = mouse_enabled
@@ -79,6 +92,9 @@ class Window:
         clock.schedule_interval(self.update, interval)
 
     def init(self):
+        pass
+
+    def resize(self, width, height):
         pass
 
     def update(self, dt: float):
@@ -99,7 +115,7 @@ class Window:
     @property
     def resizable(self) -> bool:
         return self._resizable
-    
+
     @resizable.setter
     def resizable(self, value: bool):
         self._resizable = value
@@ -112,7 +128,7 @@ class Window:
     @width.setter
     def width(self, value: int):
         self._window.width = value
-	
+
     @property
     def height(self) -> int:
         return self._window.height
@@ -140,6 +156,10 @@ class Window:
         def on_draw():
             window.clear()
             self.render()
+
+        @window.event
+        def on_resize(width, height):
+            self.resize(width, height)
 
         @window.event
         def on_key_press(symbol, mods):
@@ -189,10 +209,10 @@ class Window:
             if button == buttons['left']:
                 held_keys['left mouse'] = 1
                 self.input('left mouse down')
-            elif button == buttons['right']: 
+            elif button == buttons['right']:
                 held_keys['right mouse'] = 1
                 self.input('right mouse down')
-            else: 
+            else:
                 held_keys['middle mouse'] = 1
                 self.input('middle mouse down')
 
@@ -215,7 +235,7 @@ class Window:
             elif button == buttons['right']:
                 held_keys['right mouse'] = 0
                 self.input('right mouse up')
-            else: 
+            else:
                 held_keys['middle mouse'] = 0
                 self.input('middle mouse up')
 
@@ -251,7 +271,7 @@ class Window:
 
 class ElementBase:
     def __init__(self, element, *args, x = 0, y = 0, color = (0, 0, 0), anchored = True, colored = True,  **kwargs):
-        self._element = (element(*args, x = x, y = y, anchor_x = 'center', anchor_y = 'center', **kwargs) if anchored 
+        self._element = (element(*args, x = x, y = y, anchor_x = 'center', anchor_y = 'center', **kwargs) if anchored
             else element(*args, x = x, y = y, **kwargs))
 
         if colored:
@@ -315,7 +335,7 @@ class Label(ElementBase):
     @property
     def text(self):
         return self._element.text
-    
+
     @text.setter
     def text(self, value):
         self._element.text = value
@@ -336,12 +356,12 @@ class Rectangle(ElementBase):
 
     def distance(self, x, y, width, height):
         dist_x, dist_y = 0, 0
-        if x < self.x: 
+        if x < self.x:
             dist_x = x - (self.x + self.width)
         elif x > self.x:
             dist_x = (x + width) - self.x
 
-        if y < self.y: 
+        if y < self.y:
             dist_y = x - (self.y + self.height)
         elif y > self.y:
             dist_y = (y + height) - self.y
@@ -407,12 +427,12 @@ class Sprite(ElementBase):
 
     def distance(self, x, y, width, height):
         dist_x, dist_y = 0, 0
-        if x < self.x: 
+        if x < self.x:
             dist_x = x - (self.x + self.width)
         elif x > self.x:
             dist_x = (x + width) - self.x
 
-        if y < self.y: 
+        if y < self.y:
             dist_y = x - (self.y + self.height)
         elif y > self.y:
             dist_y = (y + height) - self.y
@@ -518,6 +538,7 @@ def interval(interval_time = 1.0):
 if __name__ == '__main__':
     class MyApp(Window):
         def init(self):
+            self.old_size = (1, 1)
             self.score = 0
             self.playerSpeed = 300
             self.player_on_cooldown = False
@@ -526,7 +547,7 @@ if __name__ == '__main__':
             self.obstacle2 = Rectangle(self.width // 2, 10, 60, 60, (200, 10, 10))
             self.score_lbl = Label(str(self.score), self.width - 100, self.height - 50)
 
-        def update(self, dt): 
+        def update(self, dt):
             # self.player.y += (held_keys['up arrow'] - held_keys['down arrow']) * 200 * dt
             # self.player.x += (held_keys['right arrow'] - held_keys['left arrow']) * 200 * dt
 
@@ -548,13 +569,19 @@ if __name__ == '__main__':
             if self.player.is_colliding(self.obstacle) or self.player.is_colliding(self.obstacle2) or held_keys['escape']:
                 quit()
 
+            self.old_size = (self.width, self.height)
+
+        def resize(self, width, height):
+            self.player.x, self.player.y = convert_pos(
+                (self.player.x, self.player.y), self.old_size, (width, height))
+
         def render(self):
             self.player.render()
             self.obstacle.render()
             self.obstacle2.render()
             self.score_lbl.render()
 
-    myapp = MyApp(title = 'Test', fullscreen = True, mouse_enabled = True)
+    myapp = MyApp(title = 'Test', width = 1000, height = 700, fullscreen = False, mouse_enabled = True, resizable = True)
 
     @interval(1)
     def survive_time(dt):
