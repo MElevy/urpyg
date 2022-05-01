@@ -1,9 +1,12 @@
 import pyglet, random
 from pyglet import clock
+import logging
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+
+MAGENTA = (255, 0, 255)
 
 keys = {
     'up arrow' : pyglet.window.key.UP,
@@ -491,31 +494,68 @@ class Sprite(ElementBase):
         self.height, self.width = self.height, self.width
 
 class Group:
-    def __init__(self, *args):
-        self.group = list(args)
+    def __init__(self, *widgets):
+        self.widgets = list(widgets)
 
     def add(self, *args):
         for arg in args:
-            self.group.append(arg)
+            self.widgets.append(arg)
 
     def delete(self, index):
-        del self.group[index]
+        del self.widgets[index]
 
     def index(self, value):
-        return self.group.index(value)
+        return self.widgets.index(value)
 
     def __getitem__(self, index):
-        return self.group[index]
+        return self.widgets[index]
 
     def __setitem__(self, index, value):
-        self.group[index] = value
+        self.widgets[index] = value
 
     def __len__(self):
-        return len(self.group)
+        return len(self.widgets)
 
     def render(self):
-        for item in self.group:
+        for item in self.widgets:
             item.render()
+
+class BoxLayout(Group):
+    def __init__(self, *widgets, x = 0, y = 0, orientation = 'vertical'):
+        super().__init__(*widgets)
+        self.x, self.y = x, y
+        self.orientation = orientation
+
+    def render(self, screen_width, screen_height):
+        origin_x, origin_y = float(self.x), float(self.y)
+
+        widget_width = percent_of(100 / len(self), screen_width)
+        widget_height = percent_of(100 / len(self), screen_height)
+        if self.orientation.lower() in ('vertical', 'v'):
+            for widget_obj in self.widgets:
+                widget_obj.x, widget_obj.y = self.x, self.y
+                widget_obj.width, widget_obj.height = screen_height, widget_height
+                if isinstance(widget_obj, BoxLayout):
+                    widget_obj.render(screen_width, widget_height)
+                else:
+                    widget_obj.render()
+
+                self.y += widget_height
+        elif self.orientation.lower() in ('horizontal', 'h'):
+            for widget_obj in self.widgets:
+                widget_obj.x, widget_obj.y = self.x, self.y
+                widget_obj.width, widget_obj.height = widget_width, screen_height
+                if isinstance(widget_obj, BoxLayout):
+                    widget_obj.render(widget_width, screen_height)
+                else:
+                    widget_obj.render()
+
+                self.x += widget_width
+        else:
+            logging.wrning(f'{self.orientation} is not a valid orientation')
+            return
+
+        self.x, self.y = origin_x, origin_y
 
 def schedule(interval_time = 1.0):
     def init_schedule(func):
