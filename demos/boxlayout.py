@@ -21,6 +21,11 @@ class BoxLayoutApp(Window):
             Label('Hi', percent_of(25, self.width), percent_of(75, self.height))
         )
 
+    def input(self, key):
+        if key == 'left mouse down':
+            if self.layout[1][0].is_hovered(mouse.x, mouse.y):
+                self.labels[0].text = 'clicked' if self.labels[0].text == 'hi' else 'hi'
+
     def resize(self, width, height):
         self.labels[0].x, self.labels[0].y = percent_of(25, self.width), percent_of(75, self.height)
 
