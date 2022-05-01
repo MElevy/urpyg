@@ -26,6 +26,12 @@ class BoxLayoutApp(Window):
             if self.layout[1][0].is_hovered(mouse.x, mouse.y):
                 self.labels[0].text = 'clicked' if self.labels[0].text == 'hi' else 'hi'
 
+    def update(self, dt):
+        if self.layout[1][1].is_hovered(mouse.x, mouse.y):
+            self.layout[1][1].color = (205, 100, 205)
+        else:
+            self.layout[1][1].color = MAGENTA
+
     def resize(self, width, height):
         self.labels[0].x, self.labels[0].y = percent_of(25, width), percent_of(75, height)
 
