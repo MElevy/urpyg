@@ -18,7 +18,7 @@ class BoxLayoutApp(Window):
         )
 
         self.labels = Group(
-            Label('Hi', percent_of(25, self.width), percent_of(75, self.height))
+            Label('hi', percent_of(25, self.width), percent_of(75, self.height))
         )
 
     def input(self, key):
